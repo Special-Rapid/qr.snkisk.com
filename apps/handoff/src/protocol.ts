@@ -19,7 +19,14 @@ export function createPairCode(random = crypto.getRandomValues(new Uint8Array(PA
 }
 
 export function createConfirmationPhrase(random = crypto.getRandomValues(new Uint8Array(2))) {
-  return `${WORDS[random[0] % WORDS.length]}・${WORDS[random[1] % WORDS.length]}`;
+  const words: string[] = [];
+  let index = 0;
+  while (words.length < 2) {
+    const byte = index < random.length ? random[index++] : crypto.getRandomValues(new Uint8Array(1))[0];
+    const candidate = byte & 31;
+    if (candidate < WORDS.length) words.push(WORDS[candidate]);
+  }
+  return words.join("・");
 }
 
 export function createOpaqueToken() {
