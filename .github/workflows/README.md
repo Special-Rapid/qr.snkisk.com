@@ -2,7 +2,9 @@
 
 `verify.yml` はlock済み依存、画像入力、全app検査と生成物同期を確認する。`codeql.yml` の変更も全app検査の対象にする。
 
-`codeql.yml` はmainへのpush、main向けPR、週次、手動起動でActions・JavaScript/TypeScript・Java/Kotlin・Swiftを解析する。ActionsとJS/TSはLinuxでbuildなし、KotlinはLinuxでAndroid appのdebug compile、SwiftはmacOSでPodsを準備してSimulator向けに署名なしでbuildする。Expoのlocal moduleを解析するため、このjob内ではprecompiled modulesを無効にする。SDK世代、配布、DB、本番サービスの設定は変更しない。
+`codeql.yml` はmainへのpush、main向けPR、週次、手動起動でActions・JavaScript/TypeScript・Java/Kotlin・Swiftを解析する。ActionsとJS/TSはLinuxでbuildなし、KotlinはLinuxでAndroid appのdebug compile、SwiftはmacOSでPodsを準備してSimulator向けに署名なしでbuildする。SDK世代、配布、DB、本番サービスの設定は変更しない。
+
+Swift解析では既存Podfileの既定値と同じ `EXPO_USE_PRECOMPILED_MODULES=1` を使う。固定npm依存に用意されたframeworkを利用し、外部Expo依存までソースから再ビルドして解析前に時間切れになる負荷を減らす。独自の `QrScanOcr` はprecompiled設定を持たないためソースからbuildする。アプリ・拡張を含む全tracked Swift5件の抽出確認を残し、実抽出診断も照合する。管理sourceの抽出漏れがあれば解析成功として扱わない。
 
 Swiftの解析用buildは `ARCHS=arm64 ONLY_ACTIVE_ARCH=YES` を指定する。generic Simulator destinationでarm64とx86_64を重複buildしてjobが時間切れになることを避ける。全tracked Swiftの抽出確認は維持する。これはCI内だけの指定で、配布用build設定は変更しない。
 
