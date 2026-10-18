@@ -1,0 +1,24 @@
+{
+  "package": "node-forge",
+  "version": "1.4.0",
+  "description": "DigestAlgorithmの余剰要素と非空NULLを拒否する。正しい省略可能NULLとMD2/MD5のNULL必須契約を維持する。",
+  "files": [
+    {
+      "file": "lib/rsa.js",
+      "before": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+      "after": "d4c82bdfb14ab1c9692db5a23718410f4943709324b19fb8d0bbdcaa8a0a7974",
+      "replacements": [
+        {
+          "from": "          if(!asn1.validate(obj, digestInfoValidator, capture, errors) ||\n            obj.value.length !== 2) {",
+          "to": "          var validDigestInfo = asn1.validate(obj, digestInfoValidator, capture, errors);\n          var hasParameters = Object.prototype.hasOwnProperty.call(capture, 'parameters');\n          if(!validDigestInfo || obj.value.length !== 2 ||\n            obj.value[0].value.length !== (hasParameters ? 2 : 1) ||\n            (hasParameters && capture.parameters !== '')) {",
+          "count": 1
+        },
+        {
+          "from": "if(!('parameters' in capture)) {",
+          "to": "if(!hasParameters) {",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
