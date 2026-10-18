@@ -7,13 +7,15 @@ type EventFields = { id?: unknown; host?: unknown; data?: unknown; createdAt?: u
 type ConnectorFields = { extensionId?: unknown };
 type PendingAck = { attempt: number; expiresAt: number; timer: number };
 type ReceiverState = {
-  credential: CredentialFields | null | undefined; socket: WebSocket | null; poll: number | null;
+  pairing: boolean; credential: CredentialFields | null | undefined; socket: WebSocket | null; poll: number | null;
   events: Map<unknown, EventFields>; extensionId: unknown; connector: ConnectorFields | null | undefined; connectorError: unknown;
   pendingAcks: Map<unknown, PendingAck>; preferences: Preferences; activeView: unknown;
   notification: { enabled: boolean; statusKey: string; status: string; isError: boolean; supported: boolean };
 };
 type ApiOptions = Omit<RequestInit, "body"> & { body?: unknown };
 type Fields = Record<string, unknown>;
+
+import { isCanonicalPairCode, pairPath, receiverApiPath, safeEventUrl } from "/request-boundaries.js";
 
 import { notificationPermissionState } from "/notification-state.js";
 
@@ -22,7 +24,7 @@ const preferencesKey = "qr-scan-web-receiver-preferences";
 const messages = {
   ja: {
     navInbox: "受信箱", navDevices: "デバイス", navSettings: "設定", navMenu: "メインメニュー", railNote: "スマホで読み取った内容を、このPCで安全に開けます。", progressLabel: "セットアップの進行状況", notificationForeground: "スマホから新しい読み取り結果が届きました。",
-    setupEyebrow: "PCを準備する", setupTitle: "このPCをセットアップ", setupBody: "スマホで読み取ったリンクや文字列を、このPCで受け取れます。", setupCardKicker: "最初のステップ", setupCardTitle: "スマホを連携する", setupCardBody: "PCに表示するコードをスマホアプリへ入力し、両方の画面で確認します。", setupStart: "スマホを連携する", stepPrepare: "PCを準備", stepCode: "コード入力", stepConfirm: "両方で確認", stepReady: "受信開始",
+    setupEyebrow: "PCを準備する", setupTitle: "このPCをセットアップ", setupBody: "スマホで読み取ったリンクや文字列を、このPCで受け取れます。", setupCardKicker: "最初のステップ", setupCardTitle: "スマホを連携する", setupCardBody: "PCに表示するコードをスマホアプリへ入力し、両方の画面で確認します。", setupStart: "スマホを連携する", pairPreparing: "連携コードを準備しています…", stepPrepare: "PCを準備", stepCode: "コード入力", stepConfirm: "両方で確認", stepReady: "受信開始",
     pairCodeEyebrow: "スマホで入力するコード", pairCodeKicker: "スマホで入力してください", pairCodeTitle: "スマホアプリを開いてコードを入力", pairCodeBody: "入力後、この画面に確認フレーズが表示されます。", pairPhraseLabel: "確認フレーズ", pairConfirm: "このPCで確認する", pairRestart: "別のコードを作る", pairWaiting: "スマホアプリでコードを入力してください。", pairClaimed: "がコードを入力しました。確認フレーズを見比べてから確認してください。", pairComplete: "連携が完了しました。", pairExpired: "連携コードの有効期限が切れました。もう一度作成してください。", pairRevoked: "この連携は解除されました。もう一度連携してください。", pairExpiry: "残り {{time}}",
     inboxEyebrow: "PC連携", inboxTitle: "受信箱", inboxBody: "スマホから届いた内容を、ここで確認して開けます。", notificationEnable: "Web通知を有効にする", notificationEnabled: "Web通知は有効です", notificationReady: "このブラウザに届くようになりました。", notificationPreparing: "通知を準備しています…", notificationNeedPair: "先にスマホと連携してください。", notificationUnsupported: "このブラウザはWeb通知に対応していません。", notificationDenied: "通知は許可されませんでした。ブラウザ設定から許可できます。", notificationUnknown: "通知の状態を確認できませんでした。ページを再読み込みしてください。", pushUnavailable: "Web通知はまだ準備中です。管理者が通知設定を完了した後、もう一度試してください。", recentTitle: "最近の受信", connectionChecking: "接続を確認中", connectionNone: "未接続", connectionActive: "接続中 {{count}}台", emptyKicker: "準備完了", emptyTitle: "まだ受信はありません", emptyBody: "スマホでQRコード、バーコード、URL文字列を読み取るとここに届きます。", eventUrl: "リンク", eventText: "文字列", copy: "コピー", copied: "コピーしました", open: "開く",
     devicesEyebrow: "連携先", devicesTitle: "デバイス", devicesBody: "このPCに接続している端末と高速通知を管理します。", thisPcLabel: "このPC", thisBrowser: "このブラウザ", connectedDevices: "接続中のデバイス", noDevices: "連携すると、ここにスマホの名前が表示されます。", mobileConnected: "連携中のスマホ: {{mobile}}。通知と受信箱はこのページでまとめて管理します。", mobileConnector: "連携中のスマホ: {{mobile}}。Chrome拡張もこのPCの高速通知用に接続されています。", fastNotificationKicker: "Chrome拡張", fastNotificationTitle: "高速通知", connectorNone: "Chrome拡張を入れると、このPCへの高速通知に使えます。受信箱は増えません。", connectorFound: "Chrome拡張を検出しました。接続すると、追加の連携コードなしで高速通知を使えます。", connectorConnected: "Chrome拡張が高速通知コネクタとして接続済みです。通知を押すと、URLは直接開き、文字列はこの受信箱を開きます。", connectorConnecting: "Chrome拡張を接続しています…", connectorConnect: "Chrome拡張を接続", connectorDisconnect: "Chrome拡張を解除",
@@ -31,7 +33,7 @@ const messages = {
   },
   en: {
     navInbox: "Inbox", navDevices: "Devices", navSettings: "Settings", navMenu: "Main menu", railNote: "Open content scanned on your phone safely on this PC.", progressLabel: "Setup progress", notificationForeground: "A new scan result arrived from your phone.",
-    setupEyebrow: "Prepare this PC", setupTitle: "Set up this PC", setupBody: "Receive links and text scanned on your phone here.", setupCardKicker: "First step", setupCardTitle: "Link your phone", setupCardBody: "Enter the code shown here in the phone app, then confirm it on both screens.", setupStart: "Link your phone", stepPrepare: "Prepare PC", stepCode: "Enter code", stepConfirm: "Confirm both", stepReady: "Start receiving",
+    setupEyebrow: "Prepare this PC", setupTitle: "Set up this PC", setupBody: "Receive links and text scanned on your phone here.", setupCardKicker: "First step", setupCardTitle: "Link your phone", setupCardBody: "Enter the code shown here in the phone app, then confirm it on both screens.", setupStart: "Link your phone", pairPreparing: "Preparing link code…", stepPrepare: "Prepare PC", stepCode: "Enter code", stepConfirm: "Confirm both", stepReady: "Start receiving",
     pairCodeEyebrow: "Enter this code on your phone", pairCodeKicker: "Use the phone app", pairCodeTitle: "Open the app and enter the code", pairCodeBody: "A confirmation phrase appears here after the code is entered.", pairPhraseLabel: "Confirmation phrase", pairConfirm: "Confirm on this PC", pairRestart: "Create another code", pairWaiting: "Enter the code in the phone app.", pairClaimed: " entered the code. Compare the confirmation phrase before confirming.", pairComplete: "Linking is complete.", pairExpired: "The link code expired. Create a new one.", pairRevoked: "This link was removed. Link again.", pairExpiry: "{{time}} remaining",
     inboxEyebrow: "PC link", inboxTitle: "Inbox", inboxBody: "Review and open content delivered from your phone.", notificationEnable: "Enable web notifications", notificationEnabled: "Web notifications enabled", notificationReady: "This browser can now receive notifications.", notificationPreparing: "Preparing notifications…", notificationNeedPair: "Link a phone first.", notificationUnsupported: "This browser does not support web notifications.", notificationDenied: "Notifications were not allowed. You can allow them in your browser settings.", notificationUnknown: "Could not check notification status. Reload this page.", pushUnavailable: "Web notifications are not ready yet. Ask the administrator to finish notification setup, then try again.", recentTitle: "Recent deliveries", connectionChecking: "Checking connection", connectionNone: "Not connected", connectionActive: "{{count}} connected", emptyKicker: "Ready", emptyTitle: "Nothing received yet", emptyBody: "QR codes, barcodes, and URL text scanned on the phone arrive here.", eventUrl: "Link", eventText: "Text", copy: "Copy", copied: "Copied", open: "Open",
     devicesEyebrow: "Connections", devicesTitle: "Devices", devicesBody: "Manage devices linked to this PC and fast notifications.", thisPcLabel: "This PC", thisBrowser: "This browser", connectedDevices: "Connected devices", noDevices: "A linked phone will appear here.", mobileConnected: "Linked phone: {{mobile}}. Manage notifications and the inbox on this page.", mobileConnector: "Linked phone: {{mobile}}. Chrome extension fast notifications are also connected.", fastNotificationKicker: "Chrome extension", fastNotificationTitle: "Fast notifications", connectorNone: "Install the Chrome extension to use fast notifications on this PC. It does not create another inbox.", connectorFound: "Chrome extension found. Connect it to use fast notifications without another link code.", connectorConnected: "The Chrome extension is connected for fast notifications. URLs open directly; text opens this inbox.", connectorConnecting: "Connecting the Chrome extension…", connectorConnect: "Connect Chrome extension", connectorDisconnect: "Disconnect Chrome extension",
@@ -41,7 +43,7 @@ const messages = {
 };
 
 const state: ReceiverState = {
-  credential: loadCredential() as ReceiverState["credential"], socket: null, poll: null, events: new Map(), extensionId: null, connector: null, connectorError: "", pendingAcks: new Map(),
+  pairing: false, credential: loadCredential() as ReceiverState["credential"], socket: null, poll: null, events: new Map(), extensionId: null, connector: null, connectorError: "", pendingAcks: new Map(),
   preferences: loadPreferences(), activeView: "inbox", notification: { enabled: false, statusKey: "", status: "", isError: false, supported: true }
 };
 const $ = <S extends string>(selector: S) => document.querySelector(selector)! as S extends "#event-template" ? HTMLTemplateElement : S extends "#confirm-web" | "#notification-button" | "#settings-notification-button" ? HTMLButtonElement : HTMLElement;
@@ -96,6 +98,7 @@ function applyPreferences() {
   });
   $("#this-pc-name").textContent = t("thisBrowser");
   if (state.credential?.status === "paired") { renderInbox(); renderConnector(); } else if (state.credential) renderPairing(); else renderUnpaired();
+  renderPairingPending();
   renderNotificationControls();
   state.events.forEach((event) => refreshEventCopy(event));
 }
@@ -106,15 +109,29 @@ function updatePreferences(next: Partial<Preferences>) {
   applyPreferences();
 }
 
+function renderPairingPending() {
+  for (const [selector, label] of [["#start-pairing", "setupStart"], ["#restart-pairing", "pairRestart"]]) {
+    const button = document.querySelector<HTMLButtonElement>(selector)!;
+    button.disabled = state.pairing;
+    button.setAttribute("aria-busy", String(state.pairing));
+    button.textContent = t(state.pairing ? "pairPreparing" : label);
+  }
+}
+
 async function startPairing() {
+  if (state.pairing) return;
+  state.pairing = true;
+  renderPairingPending();
   closeConnection();
   try {
     const pair = await api("/api/v1/pairs", { method: "POST", body: { label: browserLabel() } }) as Fields;
+    if (!isCanonicalPairCode(pair.code)) throw new Error(t("unauthorized"));
     state.credential = { ...pair, role: "web" };
     sessionStorage.setItem(key, JSON.stringify(state.credential));
     renderPairing();
     await refreshPairing();
   } catch (error) { renderUnpaired(messageFor(error), true); }
+  finally { state.pairing = false; renderPairingPending(); }
 }
 
 async function resumePairing() { renderPairing(); await refreshPairing(); }
@@ -122,8 +139,10 @@ async function resumePairing() { renderPairing(); await refreshPairing(); }
 async function refreshPairing() {
   if (!state.credential) return;
   try {
-    const detail = await api(`/api/v1/pairs/${state.credential.code}/status`, { headers: authHeaders() }) as Fields;
-    state.credential = { ...state.credential, ...detail };
+    const detail = await api(pairPath(state.credential.code, "status"), { headers: authHeaders() }) as Fields;
+    const credential = { ...state.credential, ...detail };
+    if (!isCanonicalPairCode(credential.code)) return renderUnpaired(t("unauthorized"), true);
+    state.credential = credential;
     if (detail.status === "paired") {
       localStorage.setItem(key, JSON.stringify(state.credential));
       sessionStorage.removeItem(key);
@@ -142,7 +161,7 @@ async function refreshPairing() {
 async function confirmPair(role: string) {
   if (!state.credential) return;
   try {
-    const response = await api(`/api/v1/pairs/${state.credential.code}/confirm`, { method: "POST", body: { role, token: state.credential.token } }) as { status?: unknown };
+    const response = await api(pairPath(state.credential.code, "confirm"), { method: "POST", body: { role, token: state.credential.token } }) as { status?: unknown };
     setPairStatus(response.status === "paired" ? t("pairComplete") : t("pairWaiting"));
     $("#confirm-web").disabled = true;
     await refreshPairing();
@@ -151,14 +170,14 @@ async function confirmPair(role: string) {
 
 async function loadEvents() {
   if (!state.credential) return;
-  const data = await api(`/api/v1/pairs/${state.credential.code}/events?receiver=${encodeURIComponent(state.credential.receiverId as Parameters<typeof encodeURIComponent>[0])}`, { headers: authHeaders() }) as { events: unknown };
+  const data = await api(`${pairPath(state.credential.code, "events")}?receiver=${encodeURIComponent(state.credential.receiverId as Parameters<typeof encodeURIComponent>[0])}`, { headers: authHeaders() }) as { events: unknown };
   await Promise.all((data.events as EventFields[]).map(async (event) => { addEvent(event); await acknowledgeEvent(event.id, event.expiresAt); }));
 }
 
 function openSocket() {
   if (!state.credential || state.socket) return;
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  const socket = new WebSocket(`${protocol}//${location.host}/api/v1/pairs/${state.credential.code}/ws`);
+  const socket = new WebSocket(`${protocol}//${location.host}${pairPath(state.credential.code, "ws")}`);
   state.socket = socket;
   socket.addEventListener("message", (message: MessageEvent<unknown>) => {
     const data = JSON.parse(message.data as string) as { type?: unknown; event?: unknown; mobileLabel?: unknown; by?: unknown };
@@ -281,7 +300,8 @@ function addEvent(event: EventFields) {
   fragment.querySelector<HTMLElement>(".event-time")!.textContent = new Intl.DateTimeFormat(state.preferences.locale === "ja" ? "ja-JP" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.createdAt as string | number));
   const open = fragment.querySelector<HTMLElement>(".open-event")!;
   open.textContent = t("open");
-  if (event.openUrl) open.addEventListener("click", () => window.open(event.openUrl as string, "_blank", "noopener,noreferrer")); else open.remove();
+  const openUrl = safeEventUrl(event.openUrl);
+  if (openUrl) open.addEventListener("click", () => window.open(openUrl, "_blank", "noopener,noreferrer")); else open.remove();
   const copy = fragment.querySelector<HTMLElement>(".copy-event")!;
   copy.textContent = t("copy");
   copy.addEventListener("click", async () => { await navigator.clipboard.writeText(event.data as string); copy.textContent = t("copied"); });
@@ -310,7 +330,7 @@ async function receiveHandoff(event: unknown) { if (!(event as EventFields | nul
 async function acknowledgeEvent(eventId: unknown, expiresAt: unknown = Date.now() + 10 * 60 * 1000) {
   if (!state.credential || typeof eventId !== "string" || !eventId) return;
   try {
-    await api(`/api/v1/pairs/${state.credential.code}/ack`, { method: "POST", body: { eventId } });
+    await api(pairPath(state.credential.code, "ack"), { method: "POST", body: { eventId } });
     const pending = state.pendingAcks.get(eventId); if (pending) window.clearTimeout(pending.timer); state.pendingAcks.delete(eventId);
   } catch { scheduleAckRetry(eventId, expiresAt); }
 }
@@ -341,7 +361,7 @@ async function requestNotifications() {
     const { publicKey } = await api("/api/v1/vapid-public-key") as { publicKey?: unknown };
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToUint8Array(publicKey) });
-    await api(`/api/v1/pairs/${state.credential.code}/push-subscriptions`, { method: "POST", body: { subscription: subscription.toJSON() } });
+    await api(pairPath(state.credential.code, "push-subscriptions"), { method: "POST", body: { subscription: subscription.toJSON() } });
     state.notification.enabled = true;
     state.notification.statusKey = "notificationReady";
     state.notification.status = "";
@@ -385,21 +405,21 @@ function receiveExtensionBridge(event: MessageEvent<unknown>) {
   }
 }
 
-async function syncConnector() { if (!state.credential) return; const data = await api(`/api/v1/pairs/${state.credential.code}/connector-status`) as { connector?: unknown }; state.connector = data.connector as ReceiverState["connector"]; renderConnector(); }
+async function syncConnector() { if (!state.credential) return; const data = await api(pairPath(state.credential.code, "connector-status")) as { connector?: unknown }; state.connector = data.connector as ReceiverState["connector"]; renderConnector(); }
 async function connectExtension() {
   if (!state.credential || !state.extensionId) return;
   try {
     state.connectorError = "";
-    const link = await api(`/api/v1/pairs/${state.credential.code}/connector-link`, { method: "POST", body: { extensionId: state.extensionId } }) as { token?: unknown };
+    const link = await api(pairPath(state.credential.code, "connector-link"), { method: "POST", body: { extensionId: state.extensionId } }) as { token?: unknown };
     window.postMessage({ source: "qr-scan-web", type: "connector-link", token: link.token, extensionId: state.extensionId }, location.origin);
     $("#connector-description").textContent = t("connectorConnecting"); window.setTimeout(() => { void syncConnector(); }, 2_000);
   } catch (error) { state.connectorError = extensionMessage(error instanceof Error ? error.message : "request_failed"); renderConnector(); }
 }
-async function disconnectExtension() { if (!state.credential || !state.connector?.extensionId) return; try { await api(`/api/v1/pairs/${state.credential.code}/connector-disconnect`, { method: "POST", body: { extensionId: state.connector.extensionId } }); state.connector = null; renderConnector(); } catch (error) { setPairStatus(messageFor(error), true); } }
+async function disconnectExtension() { if (!state.credential || !state.connector?.extensionId) return; try { await api(pairPath(state.credential.code, "connector-disconnect"), { method: "POST", body: { extensionId: state.connector.extensionId } }); state.connector = null; renderConnector(); } catch (error) { setPairStatus(messageFor(error), true); } }
 async function revokePair() {
   if (!state.credential || state.credential.status !== "paired") return renderUnpaired(t("revokeNone"), true);
   if (!window.confirm(t("revokeConfirm"))) return;
-  try { await api(`/api/v1/pairs/${state.credential.code}/revoke`, { method: "POST", body: {} }); renderUnpaired(t("revokeDone")); showView("inbox"); }
+  try { await api(pairPath(state.credential.code, "revoke"), { method: "POST", body: {} }); renderUnpaired(t("revokeDone")); showView("inbox"); }
   catch (error) { setNotificationStatus(messageFor(error), true); }
 }
 
@@ -416,14 +436,20 @@ function renderNotificationControls() {
 function setNotificationStatusKey(statusKey: string, isError = false) { state.notification.statusKey = statusKey; state.notification.status = ""; state.notification.isError = isError; renderNotificationControls(); }
 function setNotificationStatus(message: string, isError = false) { state.notification.statusKey = ""; state.notification.status = message; state.notification.isError = isError; renderNotificationControls(); }
 function authHeaders() { return { "X-QR-Role": "web" }; }
-function loadCredential(): unknown { try { return JSON.parse(localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? "null"); } catch { localStorage.removeItem(key); sessionStorage.removeItem(key); return null; } }
+function loadCredential(): unknown {
+  try {
+    const credential: unknown = JSON.parse(localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? "null");
+    if (!credential || typeof credential !== "object" || !isCanonicalPairCode((credential as CredentialFields).code)) throw new Error("Invalid stored credential");
+    return credential;
+  } catch { localStorage.removeItem(key); sessionStorage.removeItem(key); return null; }
+}
 function defaultLocale() { const locale = navigator.language.toLowerCase(); return locale === "en" || locale.startsWith("en-") ? "en" : "ja"; }
 function loadPreferences(): Preferences { try { const value = JSON.parse(localStorage.getItem(preferencesKey) ?? "{}") as { theme?: unknown; locale?: unknown }; return { theme: ["system", "light", "dark"].includes(value.theme as string) ? value.theme as Theme : "system", locale: ["ja", "en"].includes(value.locale as string) ? value.locale as Locale : defaultLocale() }; } catch { return { theme: "system", locale: defaultLocale() }; } }
 function browserLabel() { return navigator.userAgent.includes("Mac") ? (state.preferences.locale === "ja" ? "Mac のブラウザ" : "Mac browser") : (state.preferences.locale === "ja" ? "このブラウザ" : "This browser"); }
 function formatPairCode(code: unknown) { return typeof code === "string" && code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code; }
 function remainingTime(expiresAt: unknown) { const seconds = Math.max(0, Math.ceil((new Date(expiresAt as string | number).getTime() - Date.now()) / 1000)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`; }
 function base64UrlToUint8Array(value: unknown) { const padded = (value as string) + "=".repeat((4 - (value as { length: number }).length % 4) % 4); const binary = atob(padded.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(binary, (character) => character.charCodeAt(0)); }
-async function api(path: string, options: ApiOptions = {}): Promise<unknown> { const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers ?? {}) }, body: options.body ? JSON.stringify(options.body) : undefined }); const data: unknown = await response.json().catch(() => ({})); if (!response.ok) throw new Error(apiMessage((data as { error?: unknown }).error) as string); return data; }
+async function api(path: string, options: ApiOptions = {}): Promise<unknown> { const response = await fetch(receiverApiPath(path), { ...options, headers: { "content-type": "application/json", ...(options.headers ?? {}) }, body: options.body ? JSON.stringify(options.body) : undefined }); const data: unknown = await response.json().catch(() => ({})); if (!response.ok) throw new Error(apiMessage((data as { error?: unknown }).error) as string); return data; }
 function apiMessage(code: unknown): unknown { return ({ rate_limited: t("rateLimited"), expired: t("expired"), unauthorized: t("unauthorized"), already_claimed: t("alreadyClaimed"), push_unavailable: t("pushUnavailable"), invalid_subscription: t("invalidSubscription"), link_expired: t("linkExpired") })[code as "rate_limited" | "expired" | "unauthorized" | "already_claimed" | "push_unavailable" | "invalid_subscription" | "link_expired"] ?? t("genericError"); }
 function extensionMessage(code: unknown): unknown { return ({ link_expired: t("linkExpired"), push_unavailable: t("notificationUnsupported"), request_failed: t("connectorFailure") })[code as "link_expired" | "push_unavailable" | "request_failed"] ?? t("connectorFailure"); }
 function messageFor(error: unknown) { return error instanceof Error ? error.message : t("genericError"); }
