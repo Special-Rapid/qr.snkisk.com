@@ -60,12 +60,15 @@
     "preweb": "npm run prepare:assets",
     "precheck": "npm run prepare:assets",
     "eas-build-post-install": "npm run prepare:assets",
-    "postinstall": "npm run prepare:assets"
+    "postinstall": "node scripts/patch-dependency-security.mts && npm run prepare:assets"
   },
   "private": true,
   "overrides": {
     "xcode": {
       "uuid": "11.1.1"
+    },
+    "query-string": {
+      "decode-uri-component": "0.5.0"
     }
   }
 }

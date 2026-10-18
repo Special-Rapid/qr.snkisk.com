@@ -18,11 +18,15 @@
     "paths": {
       "/notification-state.js": [
         "./web/notification-state.ts"
+      ],
+      "/request-boundaries.js": [
+        "./web/request-boundaries.ts"
       ]
     }
   },
   "include": [
     "web/notification-state.ts",
-    "web/app.ts"
+    "web/app.ts",
+    "web/request-boundaries.ts"
   ]
 }

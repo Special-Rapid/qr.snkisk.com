@@ -1,0 +1,84 @@
+{
+  "package": "braces",
+  "version": "3.0.3",
+  "description": "parseと公開AST処理入口でcontainer深度を128に制限する。AST全体サイズや展開結果数の制限ではない。",
+  "files": [
+    {
+      "file": "lib/constants.js",
+      "before": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "after": "fc3db282b8a5b8b8a55cda2e85ba05f0c49da138edc76227454d3f3cbc76d5fb",
+      "replacements": [
+        {
+          "from": "  MAX_LENGTH: 10000,",
+          "to": "  MAX_LENGTH: 10000,\n  MAX_DEPTH: 128,",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "file": "lib/utils.js",
+      "before": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "after": "6a0ce80f2f0443dd37174167d35c5e3c47c4b4218864ac2ae71ea02d0ae7536d",
+      "replacements": [
+        {
+          "from": "'use strict';",
+          "to": "'use strict';\n\nconst { MAX_DEPTH } = require('./constants');\n\n// parent参照を追わず、共有nodeも各参照pathで検査する。\nexports.assertDepth = ast => {\n  const pending = [{ node: ast, depth: 0 }];\n  while (pending.length > 0) {\n    const { node, depth } = pending.pop();\n    if (!node.nodes) continue;\n    if (depth > MAX_DEPTH) throw new SyntaxError('Brace nesting exceeds maximum depth');\n    for (const child of node.nodes) pending.push({ node: child, depth: depth + 1 });\n  }\n};\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "file": "lib/parse.js",
+      "before": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "after": "762442c3d5aeeace559ce4f10466ed073fbfc64fa88aadacf04bef24e16a54bd",
+      "replacements": [
+        {
+          "from": "  MAX_LENGTH,",
+          "to": "  MAX_LENGTH,\n  MAX_DEPTH,",
+          "count": 1
+        },
+        {
+          "from": "      stack.push(block);",
+          "to": "      if (stack.length > MAX_DEPTH) throw new SyntaxError('Brace nesting exceeds maximum depth');\n      stack.push(block);",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "file": "lib/stringify.js",
+      "before": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "after": "203f44c90611101883fdb8793fe8ea708a8815a934cae75334dc1a34a9325f79",
+      "replacements": [
+        {
+          "from": "module.exports = (ast, options = {}) => {",
+          "to": "module.exports = (ast, options = {}) => {\n  utils.assertDepth(ast);",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "file": "lib/compile.js",
+      "before": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "after": "7afb2446707f01664fb86da09525cedfae7b6f7f2d9775104f1e823a18079498",
+      "replacements": [
+        {
+          "from": "const compile = (ast, options = {}) => {",
+          "to": "const compile = (ast, options = {}) => {\n  utils.assertDepth(ast);",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "file": "lib/expand.js",
+      "before": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "after": "b00c5a7e2142247333b4f4e326b23aa0d62ad7d6f9f43838bd982dc9595e88e5",
+      "replacements": [
+        {
+          "from": "const expand = (ast, options = {}) => {",
+          "to": "const expand = (ast, options = {}) => {\n  utils.assertDepth(ast);",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

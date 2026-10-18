@@ -1,0 +1,22 @@
+{
+  "package": "query-string",
+  "version": "7.1.3",
+  "description": "SDK57の同期CJS契約と旧plus/fragment動作を維持し、decoder0.5のfallback対象を64KiBに制限する。正常なURIのnative fastpathは長さで拒否しない。全Router入力の上限を意味しない。",
+  "requires": {
+    "decode-uri-component": "0.5.0"
+  },
+  "files": [
+    {
+      "file": "index.js",
+      "before": "caa3f2c8b45dfe1e91db22ae10743af68de8d96f26515132bb52485ec0f037fa",
+      "after": "7bbcb5740f3e0031091a471b47353375128c55494bb20d45aa5b584c000153b9",
+      "replacements": [
+        {
+          "from": "const decodeComponent = require('decode-uri-component');",
+          "to": "const decodeUriComponent = require('decode-uri-component').default;\nconst decodeComponent = input => {\n\tconst value = input.replace(/\\+/g, ' ');\n\ttry {\n\t\treturn decodeURIComponent(value);\n\t} catch {\n\t\tif (value.length > 65536) {\n\t\t\tthrow new URIError('Malformed query component exceeds the 65536 character fallback limit');\n\t\t}\n\t\treturn decodeUriComponent(value);\n\t}\n};",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

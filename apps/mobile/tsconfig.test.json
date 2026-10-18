@@ -9,5 +9,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["test/**/*.mts"]
+  "include": ["test/**/*.mts", "scripts/patch-dependency-security.mts"]
 }

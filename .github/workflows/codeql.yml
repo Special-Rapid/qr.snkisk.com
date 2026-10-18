@@ -20,7 +20,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.language == 'swift' && 90 || 60 }}
     permissions:
       contents: read
       security-events: write
