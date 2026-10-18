@@ -5,7 +5,7 @@ export function isCanonicalPairCode(code: unknown): code is string {
 export function pairPath(code: unknown, endpoint: string): string {
   if (!isCanonicalPairCode(code)) throw new Error("Invalid pair code");
   if (!/^(?:status|confirm|events|ack|push-subscriptions|connector-status|connector-link|connector-disconnect|revoke|ws)(?![\s\S])/.test(endpoint)) throw new Error("Invalid pair endpoint");
-  return `/api/v1/pairs/${code}/${endpoint}`;
+  return `/api/v1/pairs/${encodeURIComponent(code)}/${endpoint}`;
 }
 
 export function receiverApiPath(path: string): string {
