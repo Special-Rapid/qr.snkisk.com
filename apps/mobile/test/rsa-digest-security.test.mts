@@ -6,7 +6,7 @@ import { generateKeyPairSync, privateEncrypt, constants } from 'node:crypto';
 const forge = require('node-forge');
 
 test('forge: DigestAlgorithm構造を検証し、正常署名を維持する', () => {
-  const pair = generateKeyPairSync('rsa', { modulusLength: 1024, publicExponent: 3 });
+  const pair = generateKeyPairSync('rsa', { modulusLength: 2048, publicExponent: 3 });
   const publicKey = forge.pki.publicKeyFromPem(pair.publicKey.export({ type: 'spki', format: 'pem' }));
   const a = forge.asn1;
   const node = (tag: number, value: unknown, constructed = false) => a.create(a.Class.UNIVERSAL, tag, constructed, value);
