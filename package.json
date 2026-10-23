@@ -23,5 +23,6 @@
   },
   "workspaces": [
     "apps/extension"
-  ]
+  ],
+  "license": "MIT"
 }
