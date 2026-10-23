@@ -1,5 +1,5 @@
-:root { --canvas:#f7faff; --surface:#ffffff; --surface-soft:#f3f7ff; --line:#d9e4f6; --line-strong:#b9d1ff; --ink:#0b193d; --ink-soft:#586985; --blue:#1463f3; --blue-strong:#0d51cf; --blue-soft:#e9f1ff; --success:#147a4d; --danger:#b42318; color:var(--ink); background:var(--canvas); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif; }
-:root[data-theme="dark"] { --canvas:#071327; --surface:#0b1d3b; --surface-soft:#10284e; --line:#274a79; --line-strong:#416ca4; --ink:#f5f8ff; --ink-soft:#c4d1e8; --blue:#5e9cff; --blue-strong:#78adff; --blue-soft:#163b72; --success:#63d89d; --danger:#ff9a93; }
+:root { --canvas:#f7faff; --surface:#ffffff; --surface-soft:#f3f7ff; --line:#d9e4f6; --line-strong:#b9d1ff; --ink:#0b193d; --ink-soft:#586985; --blue:#1463f3; --blue-strong:#0d51cf; --blue-soft:#e9f1ff; --success:#147a4d; --danger:#b42318; --on-accent:#fff; color:var(--ink); background:var(--canvas); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif; }
+:root[data-theme="dark"] { --canvas:#071327; --surface:#0b1d3b; --surface-soft:#10284e; --line:#274a79; --line-strong:#416ca4; --ink:#f5f8ff; --ink-soft:#c4d1e8; --blue:#5e9cff; --blue-strong:#78adff; --blue-soft:#163b72; --success:#63d89d; --danger:#ff9a93; --on-accent:var(--canvas); }
 * { box-sizing:border-box; }
 body { min-width:320px; min-height:100vh; margin:0; background:var(--canvas); }
 button { font:inherit; }
@@ -25,7 +25,7 @@ nav { display:grid; gap:5px; }
 .setup-progress { display:flex; align-items:center; width:min(100%,400px); margin:0; }
 .progress-labels { display:grid; grid-template-columns:repeat(4,1fr); width:min(100%,400px); margin:8px 0 48px; color:var(--ink-soft); font-size:10px; font-weight:700; text-align:center; }
 .progress-step { display:grid; flex:0 0 auto; width:28px; height:28px; place-items:center; border:1px solid var(--line-strong); border-radius:50%; background:var(--surface); color:var(--ink-soft); font-size:12px; font-weight:800; }
-.progress-step.is-current,.progress-step.is-complete { border-color:var(--blue); background:var(--blue); color:#fff; }
+.progress-step.is-current,.progress-step.is-complete { border-color:var(--blue); background:var(--blue); color:var(--on-accent); }
 .progress-line { height:1px; flex:1; background:var(--line-strong); }
 .progress-line.is-complete { background:var(--blue); }
 .setup-card,.pairing-card { margin-top:36px; padding:32px; border:1px solid var(--line-strong); border-radius:18px; background:var(--surface); box-shadow:0 18px 44px rgba(17,59,117,.06); }
@@ -35,7 +35,7 @@ nav { display:grid; gap:5px; }
 .setup-card p:not(.card-kicker),.pairing-card p:not(.card-kicker),.detail-panel p { margin:10px 0 0; color:var(--ink-soft); font-size:14px; line-height:1.65; }
 .setup-card .primary-button { margin-top:27px; }
 .primary-button,.quiet-button,.text-button,.choice-button { min-height:46px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:800; }
-.primary-button { border:1px solid var(--blue); padding:0 19px; background:var(--blue); box-shadow:0 8px 18px rgba(20,99,243,.18); color:#fff; }
+.primary-button { border:1px solid var(--blue); padding:0 19px; background:var(--blue); box-shadow:0 8px 18px rgba(20,99,243,.18); color:var(--on-accent); }
 .primary-button:hover { border-color:var(--blue-strong); background:var(--blue-strong); }
 .primary-button:disabled { cursor:not-allowed; opacity:.45; box-shadow:none; }
 .quiet-button { border:1px solid var(--line-strong); padding:0 15px; background:var(--surface); color:var(--blue); }
@@ -78,7 +78,7 @@ nav { display:grid; gap:5px; }
 .settings-panel { padding:25px; }
 .choice-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
 .choice-button { border:1px solid var(--line-strong); padding:0 14px; background:var(--surface); color:var(--ink-soft); }
-.choice-button.is-selected { border-color:var(--blue); background:var(--blue); color:#fff; }
+.choice-button.is-selected { border-color:var(--blue); background:var(--blue); color:var(--on-accent); }
 .settings-panel .quiet-button { margin-top:18px; }
 .danger-panel { border-color:color-mix(in srgb,var(--danger) 42%,var(--line)); }
 .danger-button { margin-top:18px; color:var(--danger); }
