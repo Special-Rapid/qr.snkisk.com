@@ -1,15 +1,17 @@
-# WebのTypeScript編集元
+# Web TypeScript sources
 
-現在は `notification-state.ts` が通知許可の状態判定を持ちます。permissionはunknownとして受け、既存のgranted比較後に、このmodule自身が作る状態を返します。新しい入力検証や言語切替は追加しません。
+<a id="webのtypescript編集元"></a>
 
-`npm run build:web` を `apps/handoff` で実行すると、`tsconfig.web.json` のstrict型検査を経て `public/notification-state.js` を生成します。型エラー時はemitせず、test前とWranglerのcustom buildでも同じ生成を行います。ブラウザーはJavaScriptを必要とするため、配布JSは小さな生成物として追跡し、編集元はこのフォルダーのTypeScriptに統一します。生成物を直接修正しません。CIは全check後に、この配布JSのGit差分がないことを確認して、編集元と追跡した生成物の不一致を拒否します。
+`notification-state.ts` currently determines notification permission states. It accepts permission as unknown and returns states created by this module after the existing comparison with granted. It adds neither input validation nor language switching.
 
-`app.ts` もstrict型検査から `public/app.js` を生成します。ブラウザーの `/notification-state.js` importは保持し、型検査時だけ同じTypeScript編集元へ解決します。配布URLと既存のpublic assetsを維持し、このsourceフォルダーやprivate資料をassetsとして配信しません。
+Running `npm run build:web` in `apps/handoff` performs strict type checking with `tsconfig.web.json` and generates `public/notification-state.js`. Type errors prevent emit. Tests and Wrangler's custom build perform the same generation. Browsers require JavaScript, so distributed JS is tracked as small generated output; the TypeScript in this folder is the editing source. Do not edit generated files directly. After all checks, CI verifies that this distributed JS has no Git diff, rejecting divergence between source and tracked output.
 
-本コマンド開始時のWeb型エラーは、`deploy:production` のlocal buildでDB migrationとWorker deployに到達する前に拒否します。固定checkout内でbuild→既存migration→既存deployの順を守る前提であり、DBと公開を跨ぐACIDやremote失敗時のrollbackを追加したものではありません。
+`app.ts` also generates `public/app.js` after strict type checking. The browser import of `/notification-state.js` is preserved and resolves to the same TypeScript source only during type checking. Preserve distribution URLs and existing public assets; do not serve this source folder or private materials as assets.
 
-`service-worker.ts` は `tsconfig.worker.json` のWebWorker型・strict検査で同じ `public/service-worker.js` に生成します。classic script形式を保つためmoduleや新しいstrict directiveを出力しません。配布URL・登録手順は保持します。3つの生成物をtest前・Wrangler build・CI同期確認の対象にします。
+Web type errors at the start of this command fail the local build in `deploy:production` before DB migration or Worker deployment is reached. This assumes build → existing migration → existing deployment in a fixed checkout; it adds neither ACID across the DB and publication nor rollback on remote failure.
 
-ACK Cacheはpair codeとevent IDを保存する再試行記録の正本です。読み取り本文・URLは保存しません。送信成功時に削除し、失敗時はSyncまたは受信箱起動の再試行へ残します。既存キーの置換、server側event IDの冪等性、通知クリック時のsame-origin認証取得とHTTP(S)限定を保持します。未検証JSONのpropertyと標準API引数への型投影は既存coercionを記述するだけで、新規検証や跨storeのACIDを主張しません。
+`service-worker.ts` generates the same `public/service-worker.js` using WebWorker types and strict checks in `tsconfig.worker.json`. To preserve classic-script format, it emits neither modules nor a new strict directive. Distribution URLs and registration steps are preserved. All three generated files are checked before tests, during Wrangler builds, and by CI synchronization checks.
 
-appのcredential/API/storage/bridgeは未検証値として扱い、型投影は既存propertyアクセスと標準APIのcoercionを記述するだけです。固定HTML要素とこのmoduleが作るstate/Map/タイマーの型を分け、server認証・ACK重複抑制・成功時のretry取消/失敗時の期限とbackoff・連携解除後の片付けを保持します。HTML/CSS・日本語/英語辞書・表示・状態遷移・操作を変えません。
+The ACK Cache is the authoritative retry record storing pair codes and event IDs. It does not store scanned content or URLs. Records are removed after successful sending and retained for Sync or inbox-startup retries after failure. Preserve replacement of existing keys, server-side event-ID idempotency, same-origin credential retrieval on notification clicks, and the HTTP(S) restriction. Type projections for unvalidated JSON properties and standard API arguments describe existing coercion only; they add neither validation nor ACID across stores.
+
+App credentials, API data, storage, and bridge data remain unvalidated values. Type projections describe existing property access and standard API coercion only. Separate types for fixed HTML elements from state, Maps, and timers created by this module. Preserve server authentication, ACK deduplication, retry cancellation on success, deadlines and backoff on failure, and cleanup after unlinking. HTML/CSS, Japanese/English dictionaries, appearance, state transitions, and interactions are unchanged.

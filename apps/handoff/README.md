@@ -1,8 +1,10 @@
 # QR Handoff Worker
 
-`qr-handoff` は、スマホで読み取ったQRコード・バーコードの値を、ペアリング済みPCのWeb受信箱へ渡すCloudflare Workerです。
+`qr-handoff` is a Cloudflare Worker that delivers QR code and barcode values scanned on a phone to the Web inbox on a paired PC.
 
-## ローカル確認
+## Local checks
+
+<a id="ローカル確認"></a>
 
 ```sh
 npm install
@@ -11,36 +13,42 @@ npm run check
 npm run dev -- --local
 ```
 
-ブラウザは `http://localhost:8787` を開きます。ローカルHTTPではCookieの`Secure`属性を外しますが、本番HTTPSでは必ず`HttpOnly; Secure; SameSite=Strict`になります。
+Open `http://localhost:8787` in a browser. Local HTTP omits the cookie's `Secure` attribute, while production HTTPS always uses `HttpOnly; Secure; SameSite=Strict`.
 
-## 本番に必要なCloudflare設定
+## Required production Cloudflare settings
 
-- Worker名: `qr-handoff`
+<a id="本番に必要なcloudflare設定"></a>
+
+- Worker name: `qr-handoff`
 - D1 binding: `DB`
 - D1 ID: `47ec50ec-4820-4bb1-b4fb-dbcba5407978`
-- D1名: `qr-handoff-prod` を前提にしています。Dashboardで異なる名前なら、デプロイ前に `wrangler.jsonc` を修正してください。
+- D1 name: assumed to be `qr-handoff-prod`. If the Dashboard shows a different name, update `wrangler.jsonc` before deployment.
 - Durable Object binding: `PAIR_DO` (`PairingRoom`)
 
-本番マイグレーションとWorkerデプロイは、必ず次の順で実行します。
+Always apply production migrations and deploy the Worker in the following order:
 
 ```sh
 npm run deploy:production
 ```
 
-`main` のみがこのコマンドを実行するWorkers Builds構成にします。非本番ブランチは本番D1へマイグレーションを適用してはいけません。
+Configure Workers Builds so only `main` runs this command. Non-production branches must not apply migrations to production D1.
 
-## DNSと通知
+## DNS and notifications
 
-`qr.snkisk.com`には既存DNSレコードがあるため、このリポジトリはCustom Domainをまだ設定しません。最初のデプロイ後に現在のDNSの用途を確認してから接続します。
+<a id="dnsと通知"></a>
 
-開いたWeb受信箱にはDurable Object WebSocketで新着が届きます。タブを閉じた状態でも届くWeb Pushは、VAPID鍵をCloudflare secretとして登録してから追加します。秘密鍵やトークンはGitへ入れません。
+`qr.snkisk.com` already has DNS records, so this repository does not configure a Custom Domain yet. Check the current use of DNS after the first deployment before connecting it.
 
-Webの編集元は [web/README.md](web/README.md) のTypeScriptです。`notification-state.ts`・`app.ts`・`service-worker.ts` を編集し、`npm run build:web` はstrict型検査後に同名の `public/*.js` を生成します。型エラー時は該当projectのemitを拒否します。test前とWranglerのcustom buildからも呼びます。配布JSは生成物として扱い、既存の配布URL・表示・操作・状態判定・public assetsを保持します。custom buildの設定は [Cloudflare公式仕様](https://developers.cloudflare.com/workers/wrangler/configuration/#custom-builds) と使用中のWrangler schemaで確認しています。
+An open Web inbox receives new items over a Durable Object WebSocket. Web Push, which also works while the tab is closed, will be added after VAPID keys are registered as Cloudflare secrets. Never commit private keys or tokens to Git.
 
-通知状態とWeb受信箱の既存テストは `test/notification-state.test.ts` と `test/web-receiver.test.ts` をstrict型検査します。`test/web-receiver-fixtures.d.ts` は固定service-workerを評価する代替Cache・Fetch・通知イベントの使用範囲だけで、実ブラウザーAPIの完全実装や製品入力検証ではありません。`test/notification-state-contract.d.ts` は配布 `public/notification-state.js` を読むテスト用のexport契約で、無視される追加引数も既存どおり扱います。実装の編集元は前述の `web/notification-state.ts` です。
+Edit the Web TypeScript sources described in [web/README.md](web/README.md). Edit `notification-state.ts`, `app.ts`, and `service-worker.ts`; `npm run build:web` performs strict type checking and then generates the matching `public/*.js` files. Type errors prevent the affected project's emit. Tests and Wrangler's custom build also invoke this command. Treat distributed JS as generated output, preserving existing distribution URLs, appearance, interactions, state decisions, and public assets. The custom build configuration is checked against the [official Cloudflare specification](https://developers.cloudflare.com/workers/wrangler/configuration/#custom-builds) and the schema of the Wrangler version in use.
 
-## 受信画面のURL境界
+The existing notification-state and Web inbox tests in `test/notification-state.test.ts` and `test/web-receiver.test.ts` undergo strict type checking. `test/web-receiver-fixtures.d.ts` covers only the substitute Cache, Fetch, and notification events used to evaluate the fixed service worker; it is neither a complete browser API implementation nor product input validation. `test/notification-state-contract.d.ts` declares test exports for reading distributed `public/notification-state.js` and preserves handling of ignored extra arguments. The implementation source remains `web/notification-state.ts` above.
 
-保存済みcredentialと応答中の連携コードは、API/WebSocketのURLを作る直前に大文字8文字のcanonical alphabetで検証する。人の入力用の正規化をここで使わず、不正なpathを別の有効コードへ解釈しない。API呼出しも既知の同一origin pathだけを許可する。受信イベントの「開く」は絶対HTTP/HTTPS URLを検証・正規化し、その文字列をクリック時まで保持する。確認フレーズは既存30語から棄却法で均等に選ぶ。これらはWorker側の権限確認・相互確認・期限・失効処理を置き換えない。
+## Receiver URL boundaries
 
-連携コードの作成・再作成中は即座に待機状態を表示し、両入口を無効にして重複起動を防ぐ。待機中の言語・テーマ切替でも状態を保ち、成功・失敗のどちらでも操作可能な状態へ戻す。
+<a id="受信画面のurl境界"></a>
+
+Immediately before constructing API/WebSocket URLs, validate stored credentials and link codes in responses against the canonical eight-character uppercase alphabet. Do not apply normalization intended for human input here or reinterpret an invalid path as another valid code. API calls allow only known same-origin paths. The received event's Open action validates and normalizes an absolute HTTP/HTTPS URL and retains that string until the click. Confirmation phrases use rejection sampling to choose uniformly from the existing 30 words. These checks do not replace the Worker's authorization, mutual confirmation, expiration, or revocation.
+
+Creating or recreating a link code immediately shows a pending state and disables both entry points to prevent duplicate activation. Language and theme changes preserve that pending state. Both success and failure restore the controls.
