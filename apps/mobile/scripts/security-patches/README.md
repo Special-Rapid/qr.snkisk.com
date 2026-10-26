@@ -1,0 +1,7 @@
+# 依存互換patch
+
+SDK57を維持した依存の限定修正をmanifestで管理する。対象version、変更前後のSHA256、置換位置がすべて一致した場合だけ`postinstall`で適用する。既知の適用済みhashは再実行を許可し、未知の内容はinstallを失敗させる。全対象の検査が済むまで書き換えない。
+
+対象と意図した制限は各manifestの`description`、回帰は対応する`test/*.test.mts`を確認する。依存更新時はpatchの要否と公開API・Metro互換性を再評価する。`--ignore-scripts`によるinstallだけでは修正も画像準備も完了しない。
+
+ローカルbackportの実行時検証と、Dependabotが参照するversion advisoryは別に扱う。versionを偽装したりalertを抑制したりして解消扱いにしない。配布・本番反映・残るrelease受入はこのpatchでは完了しない。

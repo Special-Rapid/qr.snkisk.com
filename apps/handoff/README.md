@@ -46,3 +46,14 @@ npm run deploy:production
 映像領域の`--camera-canvas`は映像未到着時の黒背景を定義する共通tokenです。
 
 同梱jsQRの著作権・Apache-2.0本文は`public/jsqr-LICENSE.txt`に保持し、再生成時にコピーします。
+Webの編集元は [web/README.md](web/README.md) のTypeScriptです。`notification-state.ts`・`app.ts`・`service-worker.ts` を編集し、`npm run build:web` はstrict型検査後に同名の `public/*.js` を生成します。型エラー時は該当projectのemitを拒否します。test前とWranglerのcustom buildからも呼びます。配布JSは生成物として扱い、既存の配布URL・表示・操作・状態判定・public assetsを保持します。custom buildの設定は [Cloudflare公式仕様](https://developers.cloudflare.com/workers/wrangler/configuration/#custom-builds) と使用中のWrangler schemaで確認しています。
+
+通知状態とWeb受信箱の既存テストは `test/notification-state.test.ts` と `test/web-receiver.test.ts` をstrict型検査します。`test/web-receiver-fixtures.d.ts` は固定service-workerを評価する代替Cache・Fetch・通知イベントの使用範囲だけで、実ブラウザーAPIの完全実装や製品入力検証ではありません。`test/notification-state-contract.d.ts` は配布 `public/notification-state.js` を読むテスト用のexport契約で、無視される追加引数も既存どおり扱います。実装の編集元は前述の `web/notification-state.ts` です。
+
+## 受信画面のURL境界
+
+保存済みcredentialと応答中の連携コードは、API/WebSocketのURLを作る直前に大文字8文字のcanonical alphabetで検証する。人の入力用の正規化をここで使わず、不正なpathを別の有効コードへ解釈しない。API呼出しも既知の同一origin pathだけを許可する。受信イベントの「開く」は絶対HTTP/HTTPS URLを検証・正規化し、その文字列をクリック時まで保持する。確認フレーズは既存30語から棄却法で均等に選ぶ。これらはWorker側の権限確認・相互確認・期限・失効処理を置き換えない。
+
+連携コードの作成・再作成中は即座に待機状態を表示し、両入口を無効にして重複起動を防ぐ。待機中の言語・テーマ切替でも状態を保ち、成功・失敗のどちらでも操作可能な状態へ戻す。
+
+Scanner integration uses `web/app.ts` as the app source and a narrow `web/scanner-contract.d.ts` declaration for the existing scanner module. The declaration describes the consumed API; it does not claim strict type checking of scanner internals. `build:web` regenerates the decoder from the current extension TypeScript sources before emitting the app.

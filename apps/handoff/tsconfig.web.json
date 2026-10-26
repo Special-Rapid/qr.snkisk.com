@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [],
+    "strict": true,
+    "noEmitOnError": true,
+    "declaration": false,
+    "sourceMap": false,
+    "rootDir": "web",
+    "outDir": "public",
+    "skipLibCheck": true,
+    "paths": {
+      "/notification-state.js": [
+        "./web/notification-state.ts"
+      ],
+      "/request-boundaries.js": [
+        "./web/request-boundaries.ts"
+      ],
+      "/scanner.js": [
+        "./web/scanner-contract.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "web/notification-state.ts",
+    "web/app.ts",
+    "web/request-boundaries.ts"
+  ]
+}

@@ -6,21 +6,28 @@
   "scripts": {
     "dev": "wrangler dev",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.web.json --noEmit && tsc --project tsconfig.worker.json --noEmit",
+    "build:web": "node scripts/build-scanner.mjs && tsc --project tsconfig.web.json && tsc --project tsconfig.worker.json",
+    "pretest": "npm run build:web",
     "check": "npm run typecheck && npm run test",
     "vapid:generate": "web-push generate-vapid-keys",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote",
-    "deploy:production": "npm run db:migrate:production && wrangler deploy"
+    "deploy:production": "npm run build:web && npm run db:migrate:production && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",
     "@cloudflare/workers-types": "^5.20260822.1",
     "@types/web-push": "^3.6.4",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.11",
+    "vitest": "^4.1.12",
     "wrangler": "^4.125.0"
   },
   "dependencies": {
     "web-push": "^3.6.7"
+  },
+  "overrides": {
+    "miniflare@5.20261006.1-alpha": {
+      "undici": "7.30.1"
+    }
   }
 }
