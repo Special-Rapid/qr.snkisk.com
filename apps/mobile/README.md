@@ -44,4 +44,4 @@ Expo GitHub Appをこのrepositoryへ接続し、base directoryを`apps/mobile`�
 
 SDK57のExpo Routerと`query-string@7.1.3`を維持し、`decode-uri-component@0.5.0`のESM defaultを同期CJSから利用する。正常なpercent encodingは長さを制限せずnative decoderで処理する。不正encodingの復旧はplusを空白へ変換した後、component全体をupstreamへ渡し、65,536文字を超える不正componentは`URIError`で拒否する。これはquery値およびfragment単位の契約で、Router全体の入力長制限ではない。
 
-`node-forge@1.4.0`のRSA DigestAlgorithm厳格化、`braces@3.0.3`のcontainer深度128制限も、[hash固定patch](scripts/security-patches/README.md)で適用する。`npm ci`のpostinstallと回帰テストが必要。公式修正版がない2件のversion警告は残り、runtime修正を警告解消と混同しない。Android実機・Store配布の検証は含まない。
+`node-forge@1.4.2` includes upstream RSA DigestInfo validation; the former 1.4.0 backport is no longer applied. The `braces@3.0.3` container-depth limit remains a [hash-pinned patch](scripts/security-patches/README.md). Run `npm ci` with its postinstall and the regression tests. GitHub advisory and alert status must be checked separately from runtime behavior. Android device and store distribution are not verified here.
