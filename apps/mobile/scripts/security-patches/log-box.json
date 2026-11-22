@@ -1,0 +1,24 @@
+{
+  "package": "@expo/log-box",
+  "version": "57.0.3",
+  "description": "Enable LogBox WebView debugging only when the host application is debuggable. Backport the sink guard from upstream 58.0.13 without changing SDK57 APIs.",
+  "files": [
+    {
+      "file": "android/src/main/expo/modules/logbox/ExpoLogBoxWebViewWrapper.kt",
+      "before": "3994d917158506986ae44703b1f013eb358d4ff100dd25f836f17b271fcd2936",
+      "after": "06d6197aa73456a2285433e3d532b94a38be99313aa18c355798087250585a6a",
+      "replacements": [
+        {
+          "from": "import android.app.Activity\n",
+          "to": "import android.app.Activity\nimport android.content.pm.ApplicationInfo\n",
+          "count": 1
+        },
+        {
+          "from": "    setWebContentsDebuggingEnabled(true)\n",
+          "to": "    if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {\n      setWebContentsDebuggingEnabled(true)\n    }\n",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
