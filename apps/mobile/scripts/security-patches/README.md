@@ -1,7 +1,9 @@
-# 依存互換patch
+# Dependency compatibility patches
 
-SDK57を維持した依存の限定修正をmanifestで管理する。対象version、変更前後のSHA256、置換位置がすべて一致した場合だけ`postinstall`で適用する。既知の適用済みhashは再実行を許可し、未知の内容はinstallを失敗させる。全対象の検査が済むまで書き換えない。
+<a id="依存互換patch"></a>
 
-対象と意図した制限は各manifestの`description`、回帰は対応する`test/*.test.mts`を確認する。依存更新時はpatchの要否と公開API・Metro互換性を再評価する。`--ignore-scripts`によるinstallだけでは修正も画像準備も完了しない。
+Manifests manage limited dependency fixes while retaining SDK57. `postinstall` applies a patch only when its target version, before/after SHA256 hashes, and replacement locations all match. A known already-patched hash permits rerunning; unknown contents fail installation. No files are rewritten until all targets have been checked.
 
-ローカルbackportの実行時検証と、Dependabotが参照するversion advisoryは別に扱う。versionを偽装したりalertを抑制したりして解消扱いにしない。配布・本番反映・残るrelease受入はこのpatchでは完了しない。
+See each manifest's `description` for its target and intended limits, and the corresponding `test/*.test.mts` for regression coverage. When updating dependencies, reassess whether patches are needed and check public API and Metro compatibility. Installation with `--ignore-scripts` alone completes neither these fixes nor asset preparation.
+
+Treat runtime validation of local backports separately from version advisories used by Dependabot. Do not spoof versions or suppress alerts and call them resolved. These patches do not complete distribution, production adoption, or remaining release acceptance.
