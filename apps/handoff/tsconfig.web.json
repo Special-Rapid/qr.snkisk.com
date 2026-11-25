@@ -21,6 +21,9 @@
       ],
       "/request-boundaries.js": [
         "./web/request-boundaries.ts"
+      ],
+      "/scanner.js": [
+        "./web/scanner-contract.d.ts"
       ]
     }
   },
