@@ -1,80 +1,81 @@
+[日本語](README-ja.md)
+
 # QR Scan
 
-QRコードをカメラなしで読み取るChrome拡張と、スマホで読んだコードをペアリング済みPCへ渡すためのモバイル／Web受信箱をまとめたプロジェクトです。
+This project combines a camera-free Chrome extension for scanning QR codes with a mobile app and Web inbox for handing scanned values to a paired PC.
 
-## できること
+## Features
 
-### Chrome拡張
+### Chrome extension
 
-- 表示中タブの可視領域にあるQRコードを、ポップアップを開くだけでスキャン
-- PNG・JPEG・WebP・GIF画像からQRコードをスキャン
-- 読み取り結果をコピーし、HTTP(S) URLだけを明示操作で新しいタブに開く
-- カメラ権限や全サイトへの常時アクセスを要求せず、スキャンは端末内で実行
+- Scan QR codes in the visible area of the current tab by opening the popup.
+- Scan QR codes from PNG, JPEG, WebP, and GIF images.
+- Copy results and explicitly open validated HTTP(S) URLs in a new tab.
+- Scan locally without camera permission or persistent access to all websites.
 
-### モバイルとPCの連携
+### Mobile-to-PC handoff
 
-- iOS／AndroidでQRコード・バーコード・印刷されたURLを検出
-- 複数候補では送信する1件を選択し、ペアリング済みPCへ明示的に渡す
-- PCのWeb受信箱または任意のChrome拡張コネクタで受信
-- Web受信箱では内容と送信先ホストを確認してからURLを開く。非URL値はコピーのみ
-- Chrome拡張コネクタの通知クリックでは、検証済みのHTTP(S) URLだけを直接開き、それ以外はWeb受信箱を開く
+- Detect QR codes, barcodes, and printed URLs on iOS and Android.
+- Select one result when multiple candidates are found and explicitly send it to a paired PC.
+- Receive results in the PC's Web inbox or an optional Chrome extension connector.
+- Review the content and destination host before opening a URL in the Web inbox. Non-URL values can only be copied.
+- Clicking a Chrome connector notification directly opens only a validated HTTP(S) URL; other values open the Web inbox.
 
-## プロジェクト構成
+## Project structure
 
-| パス | 内容 |
+| Path | Contents |
 | --- | --- |
-| [apps/extension/](apps/extension/README.md) | Manifest V3 Chrome拡張。カメラを使わないQRスキャンと任意の受信箱コネクタ。 |
-| `apps/mobile/` | ExpoベースのiOS／Androidスキャナー。 |
-| [apps/handoff/](apps/handoff/README.md) | `qr.snkisk.com`向けのCloudflare Worker、D1、Durable Object、PCのWeb受信箱。 |
-| [.github/workflows/](.github/workflows/README.md) | 全app検査と各言語CodeQLのbuild・解析条件。 |
+| [apps/extension/](apps/extension/README.md) | Manifest V3 Chrome extension with camera-free QR scanning and an optional inbox connector. |
+| [apps/mobile/](apps/mobile/README.md) | Expo-based iOS and Android scanner. |
+| [apps/handoff/](apps/handoff/README.md) | Cloudflare Worker, D1, Durable Object, and PC Web inbox for `qr.snkisk.com`. |
+| [.github/workflows/](.github/workflows/README.md) | Checks for all apps and build/analysis conditions for each CodeQL language. |
 
-## Chrome拡張をローカルで試す
+## Try the Chrome extension locally
 
 ```sh
 npm install
 npm run check:extension
 ```
 
-次にChromeで `chrome://extensions` を開き、デベロッパーモードを有効にして「パッケージ化されていない拡張機能を読み込む」から生成された `apps/extension/dist/` を選択します。
+Open `chrome://extensions` in Chrome, enable Developer mode, select **Load unpacked**, and choose the generated `apps/extension/dist/` directory.
 
-## セキュリティとプライバシー
+## Security and privacy
 
-- Chrome拡張のページ／画像スキャンは、ユーザー操作後に取得したデータを端末内だけで解析します。画像データは外部へ送信・保存しません。
-- モバイルからPCへ渡す値は、明示的にペアリングした受信先だけに配信します。ペアリングは各画面で確認でき、いつでも解除できます。
-- Web受信箱ではリンクを自動で開きません。HTTP(S) URLだけを表示し、確認後の操作で開きます。
-- Chrome拡張の通知には、読み取った本文やURL全体を入れません。クリック時は、ペアリング済みイベントから検証済みのHTTP(S) URLだけを直接開きます。
+- The Chrome extension analyzes page and image data locally after a user action. It does not send or store image data externally.
+- Values sent from mobile to PC are delivered only to an explicitly paired destination. Pairings can be reviewed in each interface and revoked at any time.
+- The Web inbox does not automatically open links. Only HTTP(S) URLs are shown as links and opened after confirmation and an explicit action.
+- Chrome extension notifications do not include the scanned text or full URL. Clicking a notification directly opens only a validated HTTP(S) URL from a paired event.
 
-## 開発
+## Development
 
-各コンポーネントの詳細は、それぞれのREADMEを参照してください。
+See each component's README for details.
 
-- [モバイルアプリ](apps/mobile/README.md)
-- [PC受信箱とWorker](apps/handoff/README.md)
+- [Mobile app](apps/mobile/README.md)
+- [PC inbox and Worker](apps/handoff/README.md)
 
-## ブランド画像
+## Brand assets
 
-`assets/brand/qr-scan-icon.svg`はブランド生成の正本です。Chrome拡張・native用の必須アイコンは引き続きローカル生成・同梱します。Web受信箱のfaviconとロゴは、同じ生成済み128px PNGを`images.snkisk.com`から配信するため、handoffの公開ディレクトリにはコピーを生成しません。ブランドを更新する際は新しい配信用PNGを公開してから、favicon・ロゴのURLとブランド契約テストを一緒に更新してください。
+`assets/brand/qr-scan-icon.svg` is the source of truth for brand generation. Required Chrome extension and native icons are generated locally and bundled. The Web inbox serves its favicon and logo as the same generated 128px PNG from `images.snkisk.com`, so no copies are generated in the handoff public directory. When updating the brand, publish the new PNG first, then update the favicon/logo URLs and brand contract tests together.
 
-## CI と配布ビルド
+## CI and distribution builds
 
-GitHub Actionsの`Verify`は、PR・`main`へのpush・手動実行時に、アプリ、tooling、lockfile、workflow自体が変わった場合だけ`npm run check`を実行します。`docs/`だけの変更では起動せず、同じPRまたはbranchへ新しいcommitが来た場合は古いverifyを取消します。
+GitHub Actions `Verify` runs `npm run check` for pull requests and pushes to `main` when app, tooling, lockfile, or relevant workflow files change, and also supports manual runs. Changes only to `docs/` do not trigger it. A newer commit on the same PR or branch cancels the older verification run.
 
-iOS/Androidの配布バイナリは、pushごとには作りません。Expo GitHub Appでこのrepositoryをモバイルprojectへ接続し、base directoryを`apps/mobile`に設定したうえで、必要なPRに次のラベルを付けます。
+iOS and Android distribution binaries are not built on every push. Connect this repository to the mobile project through the Expo GitHub App, set the base directory to `apps/mobile`, and apply the appropriate label to a PR when needed:
 
 - `eas-build-android:preview` — Android internal preview
 - `eas-build-ios:preview` — iOS internal preview
-- `eas-build-all:preview` — 両platformのinternal preview
+- `eas-build-all:preview` — Internal preview for both platforms
 
-production build / store submitは、SemVerのversion tagを作成したrelease candidateだけで、EAS dashboardまたは明示的なEAS workflowから実行します。通常の`main` pushをproduction buildのトリガーにはしません。
+Production builds and store submissions run only for release candidates with a SemVer version tag, through the EAS dashboard or an explicit EAS workflow. Ordinary pushes to `main` do not trigger production mobile builds.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Owner-authored code is licensed under the [MIT License](LICENSE). Third-party code and dependencies retain their respective copyright notices and license terms.
 
+### Build images and Git
 
-### ビルド用画像とGit
-
-編集用正本`assets/brand/qr-scan-icon.svg`とIcon Composerの編集用SVG、inline SVGはソースとして版管理します。PNG・派生SVG・生成Android vector XMLのコピーはGitに保存せず、build前に既存パスへ生成・復元します。最終extension/native配布物には従来どおり画像を同梱し、アプリ起動時にCDNへ取りに行きません。iOS実プロジェクトのIcon Composer定義とExpo設定側の定義は、この移行では変更しません。
+The editable `assets/brand/qr-scan-icon.svg`, editable Icon Composer SVGs, and inline SVGs are versioned as source. Copies of PNGs, derived SVGs, and generated Android vector XML are not stored in Git; they are generated or restored to the existing paths before a build. Final extension and native packages still bundle their images and do not fetch them from a CDN at app startup. The iOS project's Icon Composer definitions and the definitions in Expo configuration remain unchanged by this asset migration.
 
 ```sh
 npm ci
@@ -84,26 +85,25 @@ npm run prepare:native-assets
 npm run check
 ```
 
-`tooling/native-assets.lock.json`は確認済みCDN URL、SHA-256、bytes、MIME、同梱先を固定します。取得はHTTPSの`images.snkisk.com/QRCodeExtension/`のみでredirectを許可せず、全入力を検証してから同梱先へ書き込みます。HTTP/MIME/サイズ/hash不一致や未公開URLではbuildを停止します。既存の未追跡画像をfallbackに使いません。25個のAndroid `.webp`パスは元からPNG bytesのため、既存byteとパスを保持しています。
+`tooling/native-assets.lock.json` pins verified CDN URLs, SHA-256 hashes, byte sizes, MIME types, and bundle destinations. Downloads use HTTPS only from `images.snkisk.com/QRCodeExtension/`, reject redirects, and validate every input before writing to bundle destinations. HTTP, MIME, size, or hash mismatches and unpublished URLs stop the build. Existing untracked images are not used as fallbacks. The 25 Android `.webp` paths already contain PNG bytes, so their existing bytes and paths are preserved.
 
-cacheはGit外の`~/.cache/qr-scan/sha256`です。`QR_ASSET_CACHE_DIR`で別のGit外ディレクトリを指定できます。オンライン準備を一度行ったcacheを使うと、画像についてネットワーク不要で同じbyteを復元できます。
+The cache is outside Git at `~/.cache/qr-scan/sha256`. Set `QR_ASSET_CACHE_DIR` to use another directory outside Git. Once prepared online, the image cache can restore identical bytes without network access:
 
 ```sh
 QR_ASSETS_OFFLINE=1 npm run prepare:native-assets
-# または node tooling/prepare-build-assets.mjs --native --offline
+# Or: node tooling/prepare-build-assets.mjs --native --offline
 ```
 
-依存packageのインストール用cacheは別途必要です。cache未準備・破損では安全に停止します。破損したhashファイルは原因確認後に明示的に除去し、オンライン準備をやり直してください。PNG原本は確定URLとhashを更新せず上書きしません。ブランド更新では正本・固定原本・生成recipe・配布物の確認を一緒に行います。
+The dependency installation cache is separate. Missing or corrupt image cache entries stop preparation safely. Investigate a corrupt hash file before explicitly removing it and preparing again online. Do not overwrite a PNG source without updating its pinned URL and hash. Brand updates require checking the editable source, pinned originals, generation recipe, and distributed assets together.
 
-root CI、mobileのnpm postinstall（EAS prebuild前）とstart/android/ios/web/check、EAS post-install、直接Gradle preBuild、Xcodeのresource compile前に準備を接続しています。extension build/testはCDN不要で正本SVGから生成します。`npx expo`を直接実行する場合は先に`npm run prepare:native-assets`を行ってください。cacheと入力を揃えたclean checkoutで、生成のpixel/dimensionsと固定入力の完全hashを確認します。
+Preparation is wired into root CI; mobile npm postinstall before EAS prebuild; start/android/ios/web/check; EAS post-install; direct Gradle preBuild; and Xcode before resource compilation. Extension builds and tests generate assets from the source SVG without a CDN. Before invoking `npx expo` directly, run `npm run prepare:native-assets`. With matching cache and inputs in a clean checkout, verify generated pixels/dimensions and the complete hashes of pinned inputs.
 
-画像生成・native資産準備のTypeScript編集元と生成MJSの使い分けは [tooling/README.md](tooling/README.md) にまとめます。
+See [tooling/README.md](tooling/README.md) for the TypeScript editing sources and generated MJS used for image generation and native asset preparation.
 
+## Type checking, generated files, and configuration exceptions
 
-## 型移行の配布形式と設定例外
+Owner-authored source, development scripts, and existing tests are covered by type checking. Four files from the [Web editing sources](apps/handoff/web/README.md) and three from the [tooling editing sources](tooling/README.md) generate the required tracked JavaScript artifacts. Regenerate them through each folder's build instead of editing them directly. Chrome distribution bundles are generated in the existing ignored `dist/` directory.
 
-自作source・開発script・既存testを型検査する統合候補です。配布JSは [Web編集元](apps/handoff/web/README.md) の3つと [tooling編集元](tooling/README.md) の3つから生成する必要な成果物として追跡します。直接編集せず、各folderのbuildで再生成します。Chrome配布bundleは既存のignored `dist/`へ生成します。
+The [mobile ESLint configuration](apps/mobile/README.md#eslint設定の型検査とjs例外) remains JavaScript for Expo's existing discovery mechanism and is checked with strict checkJs/noEmit. This is a platform exception, not a completed rename to TypeScript. Vendor code and node_modules remain locked third-party dependencies outside this owner-authored source migration.
 
-[mobileのESLint設定](apps/mobile/README.md#eslint設定の型検査とjs例外) はExpoの既存検出経路のためJSを残し、strict checkJs/noEmitで検査するplatform例外です。TSへrename済みとは扱いません。vendor・node_modulesはlocked third-party dependencyで、この自作source移行の対象外です。
-
-この統合候補は親Issue #15の元29候補を対象にします。別機能PR #8/#9 の追加source、実端末/Push・SDK/native build・署名APK/key・本番採用は未完のまま区別します。個別Draftや統合ローカル検証をmain公開・release-readyと扱いません。
+The type migration of the original 29 candidates in parent Issue #15 has been merged into main. Additional source in the separate feature PRs #8/#9 is outside that migration. Type checking and successful native CI builds do not establish real-device/Push acceptance, signed APK/key readiness, or Store distribution. Individual Draft PRs and local checks do not establish production adoption or release readiness for those features.
