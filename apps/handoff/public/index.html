@@ -27,7 +27,7 @@
         <section class="view" id="inbox-view" aria-labelledby="inbox-title">
           <section id="unpaired-panel" class="setup-panel" aria-labelledby="setup-title">
             <div class="setup-progress" data-i18n-aria="progressLabel" aria-label="セットアップの進行状況">
-              <span class="progress-step is-current">1</span><span class="progress-line"></span><span class="progress-step">2</span><span class="progress-line"></span><span class="progress-step">3</span><span class="progress-line"></span><span class="progress-step">4</span>
+              <span class="progress-step is-current" aria-current="step">1</span><span class="progress-line"></span><span class="progress-step">2</span><span class="progress-line"></span><span class="progress-step">3</span><span class="progress-line"></span><span class="progress-step">4</span>
             </div>
             <div class="progress-labels" aria-hidden="true"><span data-i18n="stepPrepare">PCを準備</span><span data-i18n="stepCode">コード入力</span><span data-i18n="stepConfirm">両方で確認</span><span data-i18n="stepReady">受信開始</span></div>
             <p class="eyebrow" data-i18n="setupEyebrow">PCを準備する</p>
@@ -43,7 +43,7 @@
 
           <section id="pairing-panel" class="pairing-flow" hidden aria-labelledby="pair-code">
             <div class="setup-progress" data-i18n-aria="progressLabel" aria-label="セットアップの進行状況">
-              <span class="progress-step is-complete">1</span><span class="progress-line is-complete"></span><span class="progress-step is-current" id="pair-progress-step">2</span><span class="progress-line"></span><span class="progress-step">3</span><span class="progress-line"></span><span class="progress-step">4</span>
+              <span class="progress-step is-complete">1</span><span class="progress-line is-complete"></span><span class="progress-step is-current" id="pair-progress-step" aria-current="step">2</span><span class="progress-line" id="pair-confirm-progress-line"></span><span class="progress-step" id="pair-confirm-progress-step">3</span><span class="progress-line"></span><span class="progress-step">4</span>
             </div>
             <div class="progress-labels" aria-hidden="true"><span data-i18n="stepPrepare">PCを準備</span><span data-i18n="stepCode">コード入力</span><span data-i18n="stepConfirm">両方で確認</span><span data-i18n="stepReady">受信開始</span></div>
             <p class="eyebrow" id="pairing-eyebrow" data-i18n="pairCodeEyebrow">スマホで入力するコード</p>

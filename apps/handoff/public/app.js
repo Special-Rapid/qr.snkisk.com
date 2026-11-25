@@ -230,7 +230,14 @@ function renderPairing() {
     $("#pair-expiry").textContent = t("pairExpiry", { time: remainingTime(state.credential.expiresAt) });
     const claimed = Boolean(state.credential.peerLabel);
     $("#confirmation-panel").hidden = !claimed;
-    $("#pair-progress-step").textContent = claimed ? "3" : "2";
+    const codeStep = $("#pair-progress-step");
+    const confirmStep = $("#pair-confirm-progress-step");
+    codeStep.classList.toggle("is-current", !claimed);
+    codeStep.classList.toggle("is-complete", claimed);
+    confirmStep.classList.toggle("is-current", claimed);
+    $("#pair-confirm-progress-line").classList.toggle("is-complete", claimed);
+    codeStep.setAttribute("aria-current", claimed ? "false" : "step");
+    confirmStep.setAttribute("aria-current", claimed ? "step" : "false");
     $("#pairing-eyebrow").textContent = claimed ? t("pairPhraseLabel") : t("pairCodeEyebrow");
     $("#pairing-card-kicker").textContent = claimed ? t("pairPhraseLabel") : t("pairCodeKicker");
     $("#pairing-title").textContent = claimed ? t("pairPhraseLabel") : t("pairCodeTitle");
